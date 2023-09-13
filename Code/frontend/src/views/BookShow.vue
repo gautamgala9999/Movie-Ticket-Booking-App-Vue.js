@@ -6,6 +6,7 @@ const route = useRoute()
 console.log(route.params)
 const showData = ref(null);
 const user_data = JSON.parse(localStorage.getItem("user"));
+console.log(user_data);
 const requestOptions = {
     method: 'GET', // or 'POST' or other HTTP methods
     headers: {
@@ -82,7 +83,8 @@ export default {
   computed: {
     isLoggedIn() {
       const user = JSON.parse(localStorage.getItem('user'));
-      console.log(user);
+      // console.log('Logged in: ');
+      // console.log(user);
       return user !== null;
     },
   },

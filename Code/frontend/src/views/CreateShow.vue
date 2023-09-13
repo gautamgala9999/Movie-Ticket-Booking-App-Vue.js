@@ -81,6 +81,7 @@ export default {
         });
     },
     submitForm() {
+      const user_data = JSON.parse(localStorage.getItem("user"));
       const requestOptions = {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${user_data?.token}`, 'Content-Type': 'application/json' },

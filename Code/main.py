@@ -437,7 +437,7 @@ def delete_venue(venue_id):
 @token_required
 def book_tickets(show_id):   
     try:
-
+        print('inside')
         show = Show.query.get(show_id)
         if not show:
             return jsonify({'error': 'Invalid show ID'}), 404
@@ -469,7 +469,7 @@ def book_tickets(show_id):
                 ticket = Ticket(show_id=show_id, user_id=user.id)
                 list_tickets.append(ticket)
                 db.session.add(ticket)
-            
+            print('side')
             db.session.commit()
             return jsonify({'message': 'Tickets booked successfully'}), 201
         

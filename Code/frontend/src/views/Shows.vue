@@ -87,7 +87,7 @@ export default {
     computed: {
     isLoggedIn() {
       const user = JSON.parse(localStorage.getItem('user'));
-      console.log(user);
+    //   console.log(user);
       return user !== null;
     },
     isAdmin() {

@@ -46,6 +46,7 @@ export default {
     },
     methods: {
         submitForm() {
+            const user_data = JSON.parse(localStorage.getItem("user"));
             const requestOptions = {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${user_data?.token}`, 'Content-Type': 'application/json' },
@@ -54,7 +55,7 @@ export default {
             fetch('http://localhost:8000/create_venue', requestOptions)
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data);
+                    // console.log(data);
                     
                     if ( !data.error) {
                         this.$router.push('/venues/');

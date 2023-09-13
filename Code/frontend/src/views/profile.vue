@@ -12,7 +12,7 @@ fetch('http://localhost:8000/bookings')
 .then(response => response.json())
 .then(data => {
     ticketData.value = data.ticket_data;
-    console.log(data);
+    // console.log(data);
 });
 
 const shows = ref([]);

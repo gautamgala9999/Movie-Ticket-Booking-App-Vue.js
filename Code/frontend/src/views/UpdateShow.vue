@@ -38,7 +38,7 @@ function submitForm() {
 
   const requestOptions = {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 'Content-Type': 'application/json','Authorization': `Bearer ${user_data?.token}` },
     body: JSON.stringify(requestBody),
   };
   fetch(`http://localhost:8000/update_shows/${route.params.id}`, requestOptions)

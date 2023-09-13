@@ -42,7 +42,7 @@ const submitForm = () => {
     .then((data) => {
       console.log(data);
       if (!data.error) {
-        // window.location.href = "http://localhost:5173/venues"
+        window.location.href = "http://localhost:5173/venues"
       }
     })
 };
