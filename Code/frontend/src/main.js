@@ -1,5 +1,5 @@
-import NavBar from "./components/Navbar.vue"
-import Footer from "./components/Footer.vue"
+import NavBar from './components/NavBar.vue'
+import Footer from './components/Footer.vue'
 
 import { createApp } from 'vue'
 import App from './App.vue'

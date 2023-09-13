@@ -10,19 +10,21 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from celery import Celery
 import jwt
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ticket.db'
 app.secret_key = 'ticket_booking_website'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+# app.app_context().push()
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 CORS(app, origins=["http://localhost:3000"])
 
-# Celery configuration
+# Celery configuration      
 celery = Celery(
     'myapp',
     broker='redis://localhost:6379/0',  # Replace with your broker URL
@@ -153,8 +155,6 @@ tvenues=Venue.query.all()
 tall=tshows+(tvenues)
 
 
-from functools import wraps
-
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -177,7 +177,7 @@ def token_required(f):
         except jwt.InvalidTokenError:
             return jsonify({'message': 'Invalid token'}), 401
 
-        return f()
+        return f(*args,**kwargs)
 
     return decorated
 

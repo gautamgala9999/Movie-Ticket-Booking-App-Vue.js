@@ -34,7 +34,7 @@ const submitForm = () => {
   
   const requestOptions = {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json','Authorization': `Bearer ${user_data?.token}` },
     body: JSON.stringify(requestBody)
     };
     fetch(`http://localhost:8000/update_venue/${route.params.id}`,requestOptions)
@@ -42,7 +42,7 @@ const submitForm = () => {
     .then((data) => {
       console.log(data);
       if (!data.error) {
-        window.location.href = "http://localhost:5173/venues"
+        // window.location.href = "http://localhost:5173/venues"
       }
     })
 };
