@@ -268,31 +268,51 @@ def signup():
         
     return jsonify({"message": "User created successfully"}), 201
 
-@app.route('/search_show', methods=['GET'])
-def search_show():
+@app.route('/search', methods=['GET'])
+def search():
     # Get query parameters from the request
     name = request.args.get('name')
     rating = request.args.get('rating')
     tag = request.args.get('tag')
+    desc = request.args.get('desc')
+    loc = request.args.get('loc')
     
-    # Build the base query
-    query = Show.query
+    # Initialize empty lists for show and venue results
+    show_results = []
+    venue_results = []
     
-    # Add filters for search criteria
+    # Search for shows
     if name:
-        query = query.filter(Show.name.ilike(f"%{name}%"))
+        show_results = Show.query.filter(Show.name.ilike(f"%{name}%")).all()
     if rating:
-        query = query.filter(Show.rating == rating)
+        show_results = Show.query.filter(Show.rating == rating).all()
     if tag:
-        query = query.filter(Show.tag.ilike(f"%{tag}%"))
+        show_results = Show.query.filter(Show.tag.ilike(f"%{tag}%")).all()
+    if desc:
+        show_results += Show.query.filter(Show.description.ilike(f"%{desc}%")).all()
     
-    # Execute the query and get the results
-    shows = query.all()
+    # Search for venues
+    if name:
+        venue_results = Venue.query.filter(Venue.name.ilike(f"%{name}%")).all()
+    if loc:
+        venue_results = Venue.query.filter(Venue.location.ilike(f"%{loc}%")).all()
     
-    # Convert the results to a list of dictionaries
-    show_list = [show.to_dict() for show in shows]
+    # Check which results are non-empty and return the appropriate response
+    if show_results and not venue_results:
+        result_type = "Show"
+        results = [show.to_dict() for show in show_results]
+    elif venue_results and not show_results:
+        result_type = "Venue"
+        results = [venue.to_dict() for venue in venue_results]
+    else:
+        result_type = "Mixed"
+        results = {
+            "shows": [show.to_dict() for show in show_results],
+            "venues": [venue.to_dict() for venue in venue_results]
+        }
     
-    return jsonify(show_list)
+    return jsonify({"result_type": result_type, "results": results})
+
 
 @app.route('/create_shows', methods=['POST'])
 @token_required
