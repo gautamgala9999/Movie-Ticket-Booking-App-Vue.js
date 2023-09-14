@@ -7,7 +7,18 @@
           <li><a @click="redirectToHome()">nJOY</a></li>
           <li><a @click="redirectToShows()">Shows</a></li>
           <li><a @click="redirectToVenues()">Venues</a></li>
-          <li class="searchBar"><input v-model="searchQuery" placeholder="search show or venue" @keyup.enter="" /></li>
+          <li class="searchBar">
+          <input v-model="searchQuery" placeholder="search show or venue" @keyup="search" />
+          <!-- Show the dropdown only when there are search results -->
+          <div class="search-dropdown" v-show="showDropdown">
+            <ul>
+              <li v-for="(result, index) in searchResults" :key="index">
+                <!-- Display the search results here -->
+                <router-link :to="result.link">{{ result.name }}</router-link>
+              </li>
+            </ul>
+          </div>
+        </li>
           <!-- search() put this in enter="" above -->
           <li v-if="!isLoggedIn"><a @click="redirectToLogin()">SignIn</a></li>
           <li v-if="!isLoggedIn"><a @click="redirectToSignup()">SignUp</a></li>
@@ -27,6 +38,8 @@ export default {
   data() {
     return {
       searchQuery: "",
+      searchResults: [],
+      showDropdown: false, 
     };
   },
   computed: {
@@ -64,11 +77,47 @@ export default {
         redirectToProfile(){
             this.$router.push('/profile');
         },
-      },
-   };
+        search() {
+      const trimmedQuery = this.searchQuery.trim();
+      if (trimmedQuery) {
+        // Mock search results for demonstration purposes
+        this.searchResults = [
+          { name: "Result 1", link: "/result/1" },
+          { name: "Result 2", link: "/result/2" },
+          { name: "Result 3", link: "/result/3" },
+        ];
+        // Show the dropdown
+        this.showDropdown = true;
+      } else {
+        // Clear the search results and hide the dropdown if the query is empty
+        this.searchResults = [];
+        this.showDropdown = false;
+      }
+    },
+  },
+};
 </script>
 
+
+
 <style scoped>
+.search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  max-height: 200px; /* You can adjust the max height as needed */
+  overflow-y: auto;
+  display: none; /* Initially hide the dropdown */
+}
+
+/* Show the dropdown when showDropdown is true */
+.search-dropdown[style*="display: block"] {
+  display: block;
+}
 body {
 	margin: 0;
 	background: black;
