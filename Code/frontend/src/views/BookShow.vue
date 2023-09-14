@@ -95,11 +95,13 @@ export default {
         email : JSON.parse(localStorage.getItem('user')).email,
         numTickets: this.numTickets,
       };
+      const user_data = JSON.parse(localStorage.getItem("user"));
       console.log(formData);
         fetch(`http://localhost:8000/book_tickets/${route.params.id}`, {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user_data?.token}`,
             },
             body: JSON.stringify(formData),
         })
