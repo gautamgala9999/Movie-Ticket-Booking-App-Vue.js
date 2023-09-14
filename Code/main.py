@@ -1,6 +1,6 @@
 from datetime import datetime
 import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
+from flask import Flask,  request, jsonify, Response
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import current_user, login_required, login_user, logout_user, LoginManager, UserMixin
@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 from celery import Celery
 import jwt
 from functools import wraps
+import csv, io
 
 app = Flask(__name__)
 CORS(app)
@@ -182,27 +183,27 @@ def token_required(f):
     return decorated
 
 
-@login_manager.user_loader
-def load_user(id):
-    return User.query.get(int(id))
+# @login_manager.user_loader
+# def load_user(id):
+#     return User.query.get(int(id))
 
-@app.route('/', methods=['GET', 'POST'])
-def home():
-    tshows=Show.query.all()
-    tvenues=Venue.query.all()
-    tall=tshows+(tvenues)
-    tall_dicts = [item.to_dict() for item in tall]
-    return render_template("home.html", user=current_user ,tall=tall_dicts)
-    # return jsonify(tall=tall_dicts)
+# @app.route('/', methods=['GET', 'POST'])
+# def home():
+#     tshows=Show.query.all()
+#     tvenues=Venue.query.all()
+#     tall=tshows+(tvenues)
+#     tall_dicts = [item.to_dict() for item in tall]
+#     return render_template("home.html", user=current_user ,tall=tall_dicts)
+#     # return jsonify(tall=tall_dicts)
 
-@app.route('/login/admin', methods=['GET', 'POST'])
-def admin():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        if email=='admin@domain.com' and password=='admin@123':
-            return render_template('admin_login.html',user=current_user ,tall=tall)
-    return render_template('admin.html',user=current_user ,tall=tall)
+# @app.route('/login/admin', methods=['GET', 'POST'])
+# def admin():
+#     if request.method == 'POST':
+#         email = request.form.get('email')
+#         password = request.form.get('password')
+#         if email=='admin@domain.com' and password=='admin@123':
+#             return render_template('admin_login.html',user=current_user ,tall=tall)
+#     return render_template('admin.html',user=current_user ,tall=tall)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -235,11 +236,11 @@ def login():
 
 
 
-@app.route('/logout', methods=['GET', 'POST'])
-def logout():
-    logout_user()
-    print('You have logged out.')
-    return redirect(url_for('login'))
+# @app.route('/logout', methods=['GET', 'POST'])
+# def logout():
+#     logout_user()
+#     print('You have logged out.')
+#     return redirect(url_for('login'))
 
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -475,8 +476,6 @@ def book_tickets(show_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-import csv, io
 
 @app.route('/csv_shows', methods=['GET', 'POST'])
 def csv_shows():
