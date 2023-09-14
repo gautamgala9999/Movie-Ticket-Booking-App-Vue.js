@@ -18,7 +18,7 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ticket.db'
 app.secret_key = 'ticket_booking_website'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-# app.app_context().push()
+app.app_context().push()
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -268,6 +268,31 @@ def signup():
         
     return jsonify({"message": "User created successfully"}), 201
 
+@app.route('/search_show', methods=['GET'])
+def search_show():
+    # Get query parameters from the request
+    name = request.args.get('name')
+    rating = request.args.get('rating')
+    tag = request.args.get('tag')
+    
+    # Build the base query
+    query = Show.query
+    
+    # Add filters for search criteria
+    if name:
+        query = query.filter(Show.name.ilike(f"%{name}%"))
+    if rating:
+        query = query.filter(Show.rating == rating)
+    if tag:
+        query = query.filter(Show.tag.ilike(f"%{tag}%"))
+    
+    # Execute the query and get the results
+    shows = query.all()
+    
+    # Convert the results to a list of dictionaries
+    show_list = [show.to_dict() for show in shows]
+    
+    return jsonify(show_list)
 
 @app.route('/create_shows', methods=['POST'])
 @token_required
