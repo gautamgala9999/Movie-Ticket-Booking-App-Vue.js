@@ -7,18 +7,7 @@
           <li><a @click="redirectToHome()">nJOY</a></li>
           <li><a @click="redirectToShows()">Shows</a></li>
           <li><a @click="redirectToVenues()">Venues</a></li>
-          <li class="searchBar">
-          <input v-model="searchQuery" placeholder="search show or venue" @keyup="search" />
-          <!-- Show the dropdown only when there are search results -->
-          <div class="search-dropdown" v-show="showDropdown">
-            <ul>
-              <li v-for="(result, index) in searchResults" :key="index">
-                <!-- Display the search results here -->
-                <router-link :to="result.link">{{ result.name }}</router-link>
-              </li>
-            </ul>
-          </div>
-        </li>
+          <li><a @click="redirectToSearch()">Search</a></li>
           <!-- search() put this in enter="" above -->
           <li v-if="!isLoggedIn"><a @click="redirectToLogin()">SignIn</a></li>
           <li v-if="!isLoggedIn"><a @click="redirectToSignup()">SignUp</a></li>
@@ -64,11 +53,8 @@ export default {
         redirectToVenues() {
             this.$router.push('/venues');
         },
-        search() {
-          const trimmedQuery = this.searchQuery.trim();
-          if (trimmedQuery) {
-            this.$router.push(`/search?q=${encodeURIComponent(trimmedQuery)}`);
-          }
+        redirectToSearch(){
+          this.$router.push('/search');
         },
         redirectToLogout(){
           localStorage.removeItem('user');

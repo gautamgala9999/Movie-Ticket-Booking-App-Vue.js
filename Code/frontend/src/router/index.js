@@ -13,6 +13,7 @@ import csv_venue from "../views/csv_venue.vue"
 import csv_shows from "../views/csv_shows.vue"
 import profile from "../views/profile.vue"
 import logout from "../views/logout.vue"
+import SearchPage from '../views/SearchPage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,6 +87,11 @@ const router = createRouter({
       path: '/logout',
       name: 'logout',
       component: logout
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: SearchPage
     }
   ]
 })
