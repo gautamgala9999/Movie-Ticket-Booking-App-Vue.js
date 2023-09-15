@@ -225,6 +225,8 @@ def search():
     loc = request.args.get('loc')
     show_results = []
     venue_results = []
+    result_type=""
+    results=[]
     if name:
         show_results = Show.query.filter(Show.name.ilike(f"%{name}%")).all()
     if rating:
@@ -245,7 +247,10 @@ def search():
     elif venue_results and not show_results:
         result_type = "Venue"
         results = [venue.to_dict() for venue in venue_results]
-    else:
+    elif not show_results and not venue_results:
+        result_type=""
+        results=[]
+    elif  show_results and  venue_results:
         result_type = "Mixed"
         results = {
             "shows": [show.to_dict() for show in show_results],
