@@ -197,8 +197,8 @@ def login():
                 token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
                 print(token)
 
-                return jsonify({'token': token,"message": "User logged in successfully", "user_id": user.id,"user_name":user.name, "role":user.role}), 201
-                # return jsonify({"message": "User logged in successfully", "user_id": user.id,"user_name":user.name, "role":user.role}), 201
+                return jsonify({'token': token,"message": "User logged in successfully", "user_id": user.id,"user_name":user.name, "role":user.role}), 200
+                # return jsonify({"message": "User logged in successfully", "user_id": user.id,"user_name":user.name, "role":user.role}), 200
             else:
                 return jsonify({"error": "Invalid password"}), 400
         else:
@@ -230,7 +230,7 @@ def signup():
             db.session.commit()
             print('Successfully signed up.')
         
-    return jsonify({"message": "User created successfully"}), 201
+    return jsonify({"message": "User created successfully"}), 200
 
 @app.route('/search', methods=['GET'])
 def search():
@@ -296,19 +296,21 @@ def create_shows():
             db.session.add(new_show)
             db.session.commit()
 
-            return jsonify({"message": "Show created successfully"}), 201
+            return jsonify({"message": "Show created successfully"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-
+# NON REDIS IMPLEMENTED FUNCTION
 # @app.route('/show_shows', methods=['GET', 'POST'])
 # def show_shows():
 #     shows=Show.query.all()
 #     show_dicts = [show.to_dict() for show in shows]    
 #     return jsonify(show_dicts)
 
+
+# REDIS IMPLEMENTED FUNCTION
 @app.route('/show_shows', methods=['GET', 'POST'])
 def show_shows():
     cached_data = redis_client.get('show_shows')
@@ -318,7 +320,7 @@ def show_shows():
         shows = Show.query.all()
         show_dicts = [show.to_dict() for show in shows]
         json_data = jsonify(show_dicts).get_data()
-        redis_client.setex('show_shows', 3600, json_data)
+        redis_client.setex('show_shows', 30, json_data)
 
         return json_data
 
@@ -392,18 +394,20 @@ def create_venue():
         db.session.add(new_venue)
         db.session.commit()
 
-        return jsonify({"message": "Venue created successfully"}), 201
+        return jsonify({"message": "Venue created successfully"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
+# NON REDIS IMPLEMENTED FUNCTION
 # @app.route('/show_venue', methods=['GET', 'POST'])
 # def show_venue():
 #     venues=Venue.query.all()
 #     venue_dict = [venue.to_dict() for venue in venues]
 #     return jsonify(venue_dict)
 
+
+# REDIS IMPLEMENTED FUNCTION
 @app.route('/show_venue', methods=['GET', 'POST'])
 def show_venue():
     cached_data = redis_client.get('show_venue')
@@ -413,7 +417,7 @@ def show_venue():
         venues = Venue.query.all()
         venue_dicts = [venue.to_dict() for venue in venues]
         json_data = jsonify(venue_dicts).get_data()
-        redis_client.setex('show_venue', 3600, json_data)
+        redis_client.setex('show_venue', 30, json_data)
 
         return json_data
 
@@ -505,7 +509,7 @@ def book_tickets(show_id):
                 db.session.add(ticket)
             print('side')
             db.session.commit()
-            return jsonify({'message': 'Tickets booked successfully'}), 201
+            return jsonify({'message': 'Tickets booked successfully'}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -526,7 +530,7 @@ def csv_shows():
             'venue_id': show.venue_id 
         }
         shows_dicts.append(show_dict)
-    print(shows_dicts)
+    # print(shows_dicts)
     output = io.StringIO()
     csv_writer = csv.DictWriter(output, fieldnames=["id", "name", "description", "rating", "tag", "datetime", "venue_id"])
     csv_writer.writeheader()
@@ -548,7 +552,7 @@ def csv_venue():
             "capacity": venue.capacity
         }
         venues_dicts.append(venue_dict)
-    print(venues_dicts)
+    # print(venues_dicts)
     output = io.StringIO()
     csv_writer = csv.DictWriter(output, fieldnames=["id","name", "location", "capacity"])
     csv_writer.writeheader()
@@ -571,7 +575,8 @@ def profile():
         })
     except:
         return jsonify({'error': 'An error occurred'})
-
+    
+# NON REDIS IMPLEMENTED FUNCTION
 # @app.route('/bookings', methods=['GET'])
 # def bookings():
 #     try:
@@ -582,7 +587,7 @@ def profile():
 #     except Exception as e:
 #         return jsonify({'error': str(e)})
 
-
+# REDIS IMPLEMENTED FUNCTION
 @app.route('/bookings', methods=['GET'])
 def bookings():
     try:
@@ -593,105 +598,10 @@ def bookings():
             tickets = Ticket.query.all()
             ticket_data = [ticket.to_dict() for ticket in tickets]
             json_data = jsonify({'ticket_data': ticket_data}).get_data()
-            redis_client.setex('bookings', 3600, json_data)
+            redis_client.setex('bookings', 30, json_data)
             return json_data
     except Exception as e:
         return jsonify({'error': str(e)})
-
-
-# def render_show_table(shows):
-#     """Renders a list of shows as a HTML table."""
-#     table='<h2>Your monthly bookings</h2>'
-#     table += '<table border="1">'
-#     table += '<tr>'
-#     for field in ['name', 'datetime', 'rating', 'tag']:
-#         table += '<th>{}</th>'.format(field)
-#     table += '</tr>'
-#     for show in shows:
-#         table += '<tr>'
-#         for field in ['name', 'datetime', 'rating', 'tag']:
-#             table += '<td>{}</td>'.format(getattr(show, field))
-#         table += '</tr>'
-#     table += '</table>'
-#     return table
-
-# def send_email(to_email, subject, table):
-#     """Sends an email with the given HTML table as the body."""
-#     from_email = 'gautamgala5544@gmail.com' # email ID
-#     from_password = 'znjdsywcfkqxorrc' # password
-
-#     msg = MIMEMultipart()
-#     msg['Subject'] = subject
-#     msg['From'] = from_email
-#     msg['To'] = to_email
-
-#     part = MIMEText(table, 'html')
-#     msg.attach(part)
-
-#     smtp = smtplib.SMTP('smtp.gmail.com', 587)
-#     smtp.starttls()
-#     smtp.login(from_email, from_password)
-#     smtp.sendmail(from_email, to_email, msg.as_string())
-#     smtp.quit()
-
-# # @scheduler.task('cron', id='show_stats_monthly', year='*', month='*', day=1)
-# @celery_app.task
-# def show_stats_monthly():
-#     # Iterating over all users, get their shows, ratings, render in a html, send as email
-#     year = datetime.datetime.now().year
-#     month = datetime.datetime.now().month
-#     start_date = datetime.datetime(year, month, 1)
-#     end_date = start_date.replace(month=start_date.month + 1, day=1) if start_date.month != 12 else start_date.replace(year=start_date.year + 1, month=1, day=1)
-#     users = User.query.filter_by().all()
-    
-#     for user in users:
-#         id = user.id
-#         email = user.email
-#         tickets = db.session.query(Ticket).filter(
-#             Ticket.date_purchased >= start_date.isoformat(),
-#             Ticket.date_purchased < end_date.isoformat(),
-#             Ticket.user_id == id
-#         ).all()
-        
-#         if tickets:  
-#             shows = []
-#             for ticket in tickets:
-#                 show = Show.query.filter_by(id=ticket.show_id).first()
-#                 shows.append(show)
-            
-#             html = render_show_table(shows)
-#             month = datetime.datetime.now().month
-#             subject = "Entertainment Report for Month {} of {}".format(month, year)
-#             print('mpnthly celery done')
-#             send_email(email, subject, html)
-
-# # @scheduler.task('cron', id='daily_reminders',hour=18, minute=0)
-# @celery_app.task
-# def daily_reminders():
-#     print('inside')
-#     today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).date()
-#     tomorrow = today + datetime.timedelta(days=1)
-#     users = User.query.all()
-#     for user in users:
-#         id = user.id
-#         email = user.email
-#         tickets = Ticket.query.filter(
-#             Ticket.user_id == id,
-#             Ticket.date_purchased >= today,
-#             Ticket.date_purchased < tomorrow
-#         ).all()
-        
-
-#         if not tickets:
-#             html = "Hello {},<br>You haven't visited or booked anything today. We hope to see you soon!<br>Best regards,<br>nJOY Services Pvt. Ltd.".format(user.name)
-#             print((email,user))
-#             subject="Reminder: Visit or Book Something!"
-#             print('daily celery done')
-#             send_email(email,subject, html)
-
-# @celery_app.task
-# def add():
-#     return "jai"
 
 import tasks
 
@@ -707,5 +617,5 @@ def cel_jobs():
 
 if __name__=='__main__':
     db.create_all()
-    cel_jobs()
+    # cel_jobs()
     app.run(debug=True, port = 8000)
