@@ -3,12 +3,11 @@ import datetime
 from flask import Flask,  request, jsonify, Response
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import current_user, login_required, login_user, logout_user, LoginManager, UserMixin
+from flask_login import current_user,  login_user,   UserMixin
 import pytz
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from celery import Celery
 import jwt
 from functools import wraps
 import csv, io
@@ -20,25 +19,9 @@ app.secret_key = 'ticket_booking_website'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.app_context().push()
 db = SQLAlchemy(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
 CORS(app, origins=["http://localhost:3000"])
 
-# Celery configuration      
-celery = Celery(
-    'myapp',
-    broker='redis://localhost:6379/0',  # Replace with your broker URL
-    include=__name__
-)
-
-celery.conf.update(
-    task_serializer='json',
-    result_serializer='json',
-    accept_content=['json'],
-)
-
-class Show(db.Model):# type: ignore
+class Show(db.Model):
     __tablename__ = 'show'
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
@@ -75,7 +58,7 @@ class Show(db.Model):# type: ignore
         }
     
 
-class Venue(db.Model): # type: ignore
+class Venue(db.Model): 
     __tablename__ = 'venue'
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
@@ -101,7 +84,7 @@ class Venue(db.Model): # type: ignore
         }
     
 
-class User(UserMixin, db.Model):# type: ignore
+class User(UserMixin, db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
@@ -126,7 +109,7 @@ class User(UserMixin, db.Model):# type: ignore
             'email': self.email
         }
  
-class Ticket(db.Model):# type: ignore
+class Ticket(db.Model):
     __tablename__ = 'ticket'
     id = db.Column(db.Integer, primary_key=True,autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -160,8 +143,6 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = None
-        # Check if the 'Authorization' header is present
-        # print(request.headers)
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             token = auth_header.split(' ')[1] if len(auth_header.split(' ')) > 1 else None
@@ -170,9 +151,8 @@ def token_required(f):
             return jsonify({'message': 'Token is missing'}), 401
 
         try:
-            # Verify the token using the secret key
             data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            current_user = data  # This can be used to access user data in your route functions
+            current_user = data 
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:
@@ -181,30 +161,6 @@ def token_required(f):
         return f(*args,**kwargs)
 
     return decorated
-
-
-# @login_manager.user_loader
-# def load_user(id):
-#     return User.query.get(int(id))
-
-# @app.route('/', methods=['GET', 'POST'])
-# def home():
-#     tshows=Show.query.all()
-#     tvenues=Venue.query.all()
-#     tall=tshows+(tvenues)
-#     tall_dicts = [item.to_dict() for item in tall]
-#     return render_template("home.html", user=current_user ,tall=tall_dicts)
-#     # return jsonify(tall=tall_dicts)
-
-# @app.route('/login/admin', methods=['GET', 'POST'])
-# def admin():
-#     if request.method == 'POST':
-#         email = request.form.get('email')
-#         password = request.form.get('password')
-#         if email=='admin@domain.com' and password=='admin@123':
-#             return render_template('admin_login.html',user=current_user ,tall=tall)
-#     return render_template('admin.html',user=current_user ,tall=tall)
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():    
@@ -235,14 +191,6 @@ def login():
     return jsonify({"error": "Invalid request"}), 400
 
 
-
-# @app.route('/logout', methods=['GET', 'POST'])
-# def logout():
-#     logout_user()
-#     print('You have logged out.')
-#     return redirect(url_for('login'))
-
-
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -252,16 +200,16 @@ def signup():
         email = data['email']
         password1 = data['password1']
         password2 = data['password2']
-        if len(name) < 3: # type: ignore
+        if len(name) < 3: 
             return jsonify({"error": "Name must be greater than 2 characters."}), 400
-        elif len(email) < 6: # type: ignore
+        elif len(email) < 6: 
             return jsonify({"error": "Email must be greater than 5 characters."}), 400
-        elif len(password1) < 7: # type: ignore
+        elif len(password1) < 7: 
             return jsonify({"error": "Password must be at least 7 characters."}), 400
         elif password1 != password2:
             return jsonify({"error": "Passwords don't match."}), 400
         else:
-            new_user = User(name=name, email=email, password=password1) # type: ignore
+            new_user = User(name=name, email=email, password=password1) 
             db.session.add(new_user)
             db.session.commit()
             print('Successfully signed up.')
@@ -270,18 +218,13 @@ def signup():
 
 @app.route('/search', methods=['GET'])
 def search():
-    # Get query parameters from the request
     name = request.args.get('name')
     rating = request.args.get('rating')
     tag = request.args.get('tag')
     desc = request.args.get('desc')
     loc = request.args.get('loc')
-    
-    # Initialize empty lists for show and venue results
     show_results = []
     venue_results = []
-    
-    # Search for shows
     if name:
         show_results = Show.query.filter(Show.name.ilike(f"%{name}%")).all()
     if rating:
@@ -291,13 +234,11 @@ def search():
     if desc:
         show_results += Show.query.filter(Show.description.ilike(f"%{desc}%")).all()
     
-    # Search for venues
     if name:
         venue_results = Venue.query.filter(Venue.name.ilike(f"%{name}%")).all()
     if loc:
         venue_results = Venue.query.filter(Venue.location.ilike(f"%{loc}%")).all()
     
-    # Check which results are non-empty and return the appropriate response
     if show_results and not venue_results:
         result_type = "Show"
         results = [show.to_dict() for show in show_results]
@@ -386,7 +327,6 @@ def update_shows(show_id):
         return jsonify({"error": str(e)}), 500
 
 @app.route('/delete_shows/<int:show_id>', methods=['POST','GET'])
-# @login_required
 def delete_shows(show_id):
     try:
         this_show = Show.query.get(show_id)
@@ -465,7 +405,6 @@ def update_venue(venue_id):
 
 
 @app.route('/delete_venue/<int:venue_id>', methods=['POST','GET'])
-# @login_required
 def delete_venue(venue_id):
     try:
         this_venue = Venue.query.get(venue_id)
@@ -524,7 +463,7 @@ def book_tickets(show_id):
 
 @app.route('/csv_shows', methods=['GET', 'POST'])
 def csv_shows():
-    shows_data = Show.query.all()  # Assuming the model name is Show, not Venue
+    shows_data = Show.query.all()  
     shows_dicts = []
     
     for show in shows_data:
@@ -572,7 +511,7 @@ def csv_venue():
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     try:
-        this_user_id=current_user.id # type: ignore
+        this_user_id=current_user.id 
         num_tickets=Ticket.query.filter(Ticket.user_id==this_user_id).all()
         num_tickets=reversed(num_tickets)
         ticket_data = [{'id': ticket.id, 'user_id': ticket.user_id, 'show_id':ticket.show_id} for ticket in num_tickets]
@@ -587,7 +526,6 @@ def profile():
 @app.route('/bookings', methods=['GET'])
 def bookings():
     try:
-        # this_user_id = current_user.id
         tickets = Ticket.query.all()
         print(tickets)
         ticket_data = [ticket.to_dict() for ticket in (tickets)]
@@ -616,8 +554,8 @@ def render_show_table(shows):
 
 def send_email(to_email, subject, table):
     """Sends an email with the given HTML table as the body."""
-    from_email = 'gautamgala5544@gmail.com' # Enter your email ID
-    from_password = 'znjdsywcfkqxorrc' # Your password
+    from_email = 'gautamgala5544@gmail.com' # email ID
+    from_password = 'znjdsywcfkqxorrc' # password
 
     msg = MIMEMultipart()
     msg['Subject'] = subject
@@ -634,9 +572,9 @@ def send_email(to_email, subject, table):
     smtp.quit()
 
 # @scheduler.task('cron', id='show_stats_monthly', year='*', month='*', day=1)
-@celery.task
+# @celery.task
 def show_stats_monthly():
-    # Iterate over all users, get their shows, ratings, render in a html, send as email
+    # Iterating over all users, get their shows, ratings, render in a html, send as email
     year = datetime.datetime.now().year
     month = datetime.datetime.now().month
     start_date = datetime.datetime(year, month, 1)
@@ -652,7 +590,7 @@ def show_stats_monthly():
             Ticket.user_id == id
         ).all()
         
-        if tickets:  # Check  if the user has booked any tickets
+        if tickets:  
             shows = []
             for ticket in tickets:
                 show = Show.query.filter_by(id=ticket.show_id).first()
@@ -664,7 +602,7 @@ def show_stats_monthly():
             send_email(email, subject, html)
 
 # @scheduler.task('cron', id='daily_reminders',hour=18, minute=0)
-@celery.task
+# @celery.task
 def daily_reminders():
     print('inside')
     today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).date()
@@ -687,10 +625,6 @@ def daily_reminders():
             send_email(email,subject, html)
 
 if __name__=='__main__':
-    # users = User.query.all()
-    # venues = Venue.query.all()
-    # shows = Show.query.all()
-    # print(f'Users: {users}\nVenues: {venues}\nShows: {shows}')
     db.create_all()
     # daily_reminders()  #uncomment to send daily emails and test the scheduler
     # show_stats_monthly()  #uncomment to send monthly emails and test the scheduler
