@@ -49,6 +49,7 @@ fetch(`http://localhost:8000/show_venue`)
         <table class="tableDisplay">
             <thead>
                 <tr>
+                    <th>Show ID</th>
                     <th>Name</th>
                     <th>Description</th>
                     <th>Rating</th>
@@ -63,6 +64,7 @@ fetch(`http://localhost:8000/show_venue`)
             </thead>
             <tbody>
                 <tr v-for="show in shows" :key="show.id">
+                    <td>{{ show.id }}</td>
                     <td>{{ show.name }}</td>
                     <td>{{ show.description }}</td>
                     <td>{{ show.rating }}</td>

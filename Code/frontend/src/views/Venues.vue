@@ -25,7 +25,7 @@ fetch(`http://localhost:8000/show_venue`)
         <table class="tableDisplay">
             <thead>
                 <tr>
-                    <!-- <th>ID</th> -->
+                    <th>Venue ID</th>
                     <th>Name</th>
                     <th>Location</th>
                     <th>Capacity</th>
@@ -35,7 +35,7 @@ fetch(`http://localhost:8000/show_venue`)
             </thead>
             <tbody>
                 <tr v-for="venue in venues" :key="venue.id">
-                    <!-- <td>{{ venue.id }}</td> -->
+                    <td>{{ venue.id }}</td>
                 <td>{{ venue.name }}</td>
                 <td>{{ venue.location }}</td>
                 <td>{{ venue.capacity }}</td>

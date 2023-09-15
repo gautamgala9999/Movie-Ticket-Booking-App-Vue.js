@@ -109,8 +109,8 @@ export default {
             .then(data => {
               console.log(data);
               if(!data.error){
-                alert("Tickets Booked Successfully")
-                this.$router.push("/")
+                // alert("Tickets Booked Successfully")
+                this.$router.push("/profile")
               }
               else{
                 

@@ -3,7 +3,7 @@ import datetime
 from flask import Flask,  request, jsonify, Response
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import current_user,  login_user,   UserMixin
+from flask_login import current_user,  login_user,   UserMixin, LoginManager
 import pytz
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -19,6 +19,9 @@ app.secret_key = 'ticket_booking_website'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 app.app_context().push()
 db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
 CORS(app, origins=["http://localhost:3000"])
 
 class Show(db.Model):

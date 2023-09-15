@@ -55,8 +55,8 @@ const filteredTicketData = computed(() => {
     <div class="Navbar">
         <Navbar />
     </div>
-    <div id="tableContainer"><hr>
-    <h1 style="text-align: center;">Profile</h1><hr>
+    <h1 style="text-align: center;">Profile</h1>
+    <div id="tableContainer">
     <table class="tableDisplay">
         <tbody>
             <tr v-for="user in users" :key="user.id">
@@ -75,12 +75,10 @@ const filteredTicketData = computed(() => {
             
         </tbody>
     </table>
-    <hr>
+    
 </div>
+<hr><h1 style="text-align: center;">Bookings</h1>
     <div id="tableContainer">
-        <hr>
-        <h1 style="text-align: center;">Bookings</h1>
-        <hr>
         <table class="tableDisplay">
             <thead>
                 <tr>
@@ -97,13 +95,12 @@ const filteredTicketData = computed(() => {
                 <!-- <td>{{ ticket.user_id }}</td> -->
                 <td>{{ getShowName(ticket.show_id) }}</td>
                 <td>{{ getShowTime(ticket.show_id) }}</td>
-                
                 <td>{{ ticket.date_purchased }}</td>                    
                 </tr>
             </tbody>
         </table>
-        <hr>
     </div>
+    <hr>
     <div class="footer">
         <Footer />
     </div>
