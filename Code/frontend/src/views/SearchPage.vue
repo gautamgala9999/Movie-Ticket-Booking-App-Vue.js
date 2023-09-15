@@ -6,12 +6,12 @@ import Footer from '../components/Footer.vue'
       <div class="Navbar">
         <Navbar />
       </div>
-      <div>
-        <input v-model="userInput" type="text" class="searchInput" placeholder="search shows or venue" />
-      </div>
-      <div>
-        <h2>Shows</h2>
-        <table>
+      <div style="display: flex; justify-content: center; align-items: center;">
+  <input v-model="userInput" type="text" class="searchInput" placeholder="search shows or venue" style="width: 100%; height: 100%; border: 2px solid #55d6aa; padding: 10px; box-sizing: border-box;">
+</div>
+      <div id="">
+        <hr><h1 style="text-align: center;">Shows</h1><hr>
+        <table class="tableDisplay">
           <thead>
             <tr>
               <th>Name</th>
@@ -33,8 +33,8 @@ import Footer from '../components/Footer.vue'
         </table>
       </div>
       <div>
-        <h2>Venues</h2>
-        <table>
+        <hr><hr><h1 style="text-align: center;">Venues</h1><hr>
+        <table class="tableDisplay">
           <thead>
             <tr>
               <th>Name</th>
@@ -106,19 +106,48 @@ import Footer from '../components/Footer.vue'
   }
   
   /* Add your CSS styles for tables here */
-  table {
+
+#tableContainer{
+    margin: 10px 70px 70px;
+    box-shadow: 0px 35px 50px #55d6aa;
+}
+
+.tableDisplay {
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: normal;
+    border: none;
     border-collapse: collapse;
     width: 100%;
-  }
-  
-  th, td {
-    border: 1px solid #ddd;
+    max-width: 100%;
+    white-space: nowrap;
+    background-color: white;
+}
+
+.tableDisplay td, .tableDisplay th {
+    text-align: center;
     padding: 8px;
-    text-align: left;
-  }
-  
-  th {
-    background-color: #f2f2f2;
-  }
+}
+
+.tableDisplay td {
+    border-right: 1px solid #f8f8f8;
+    font-size: 15px;
+}
+
+.tableDisplay thead th {
+    color: #ffffff;
+    background: #55d6aa;
+}
+
+
+.tableDisplay thead th:nth-child(odd) {
+    color: #ffffff;
+    background: black;
+}
+
+.tableDisplay tr:nth-child(even) {
+    background: #F8F8F8;
+}
+
   </style>
   
