@@ -31,14 +31,14 @@ CORS(app, origins=["http://localhost:3000"])
 
 redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-cel.conf.beat_schedule = {
+celery_app.conf.beat_schedule = {
     'show_stats_monthly': {
-        'task': 'main.show_stats_monthly',  # Specify the task name
-        'schedule': crontab(day_of_month=1, hour=0, minute=0),  # Schedule it on the 1st day at midnight (00:00)
+        'task': 'tasks.show_stats_monthly', 
+        'schedule': crontab(minute=0, hour=0, day_of_month=1),  
     },
     'daily_reminders': {
-        'task': 'main.daily_reminders',  # Specify the task name
-        'schedule': crontab(hour=9, minute=0),  # Schedule it at 09:00 daily
+        'task': 'tasks.daily_reminders',  
+        'schedule': crontab(minute=0, hour=18), 
     },
 }
 
@@ -695,22 +695,17 @@ def bookings():
 
 import tasks
 
-@app.route('/task', methods=['GET', 'POST'])
-def task():
-    adda_result = tasks.add.delay()
+def cel_jobs():
+    # adda_result = tasks.add.delay()
     daily=tasks.daily_reminders.delay()
     monthly=tasks.show_stats_monthly.delay()
-    from datetime import datetime
-    import pytz
-    oho= (datetime.now(pytz.timezone('Asia/Kolkata')))
-    # print(f"Result Daily: {daily.get()}")
-    # print(f"Result Monthly: {monthly.get()}")
-    return f"Result: {adda_result.id}<br>Result Daily: {daily.id}<br>Result Monthly: {monthly.id}<br>--{oho}--"
+    return ''
+    # from datetime import datetime
+    # import pytz
+    # oho= (datetime.now(pytz.timezone('Asia/Kolkata')))
+    # return f"Result: {adda_result.id}<br>Result Daily: {daily.id}<br>Result Monthly: {monthly.id}<br>--{oho}--"
 
 if __name__=='__main__':
     db.create_all()
-    # daily_reminders()  #uncomment to send daily emails and test the scheduler
-    # show_stats_monthly()  #uncomment to send monthly emails and test the scheduler
-    # daily_reminders.apply_async(eta=datetime.datetime.now().replace(hour=18, minute=0))
-    # show_stats_monthly.apply_async()
+    cel_jobs()
     app.run(debug=True, port = 8000)

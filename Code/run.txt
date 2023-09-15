@@ -1,0 +1,14 @@
+for backend 
+    python .\main.py
+for frontend
+    npm install
+    npm run dev
+for redis
+    redis-server
+    redis-cli.exe 
+        get show_shows
+        get show_venue
+        get bookings
+for celery
+    celery -A main:celery_app worker --pool=solo -l info    
+    celery -A main:celery_app beat --loglevel=info

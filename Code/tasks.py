@@ -1,4 +1,3 @@
-# from main import celery_app
 from main import *
 def render_show_table(shows):
     """Renders a list of shows as a HTML table."""
@@ -63,7 +62,7 @@ def show_stats_monthly():
             html = render_show_table(shows)
             month = datetime.datetime.now().month
             subject = "Entertainment Report for Month {} of {}".format(month, year)
-            print('mpnthly celery done')
+            print('monthly reports sent')
             send_email(email, subject, html)
 
 # @scheduler.task('cron', id='daily_reminders',hour=18, minute=0)
@@ -87,9 +86,9 @@ def daily_reminders():
             html = "Hello {},<br>You haven't visited or booked anything today. We hope to see you soon!<br>Best regards,<br>nJOY Services Pvt. Ltd.".format(user.name)
             print((email,user))
             subject="Reminder: Visit or Book Something!"
-            print('daily celery done')
+            print('daily reminders sent')
             send_email(email,subject, html)
 
 @celery_app.task
 def add():
-    return "jai"
+    return "jai shri ram"
