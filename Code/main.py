@@ -11,8 +11,13 @@ from email.mime.text import MIMEText
 import jwt
 from functools import wraps
 import csv, io
+import redis
+from worker import celery_app
+from celery.schedules import crontab
 
-app = Flask(__name__)
+app = Flask(__name__)   
+cel = celery_app
+
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ticket.db'
 app.secret_key = 'ticket_booking_website'
@@ -23,6 +28,19 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 CORS(app, origins=["http://localhost:3000"])
+
+redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+cel.conf.beat_schedule = {
+    'show_stats_monthly': {
+        'task': 'main.show_stats_monthly',  # Specify the task name
+        'schedule': crontab(day_of_month=1, hour=0, minute=0),  # Schedule it on the 1st day at midnight (00:00)
+    },
+    'daily_reminders': {
+        'task': 'main.daily_reminders',  # Specify the task name
+        'schedule': crontab(hour=9, minute=0),  # Schedule it at 09:00 daily
+    },
+}
 
 class Show(db.Model):
     __tablename__ = 'show'
@@ -136,11 +154,6 @@ class Ticket(db.Model):
             'show_id': self.show_id,
             'date_purchased': self.date_purchased.isoformat()
         }
-
-tshows=Show.query.all()
-tvenues=Venue.query.all()
-tall=tshows+(tvenues)
-
 
 def token_required(f):
     @wraps(f)
@@ -290,11 +303,25 @@ def create_shows():
 
 
 
+# @app.route('/show_shows', methods=['GET', 'POST'])
+# def show_shows():
+#     shows=Show.query.all()
+#     show_dicts = [show.to_dict() for show in shows]    
+#     return jsonify(show_dicts)
+
 @app.route('/show_shows', methods=['GET', 'POST'])
 def show_shows():
-    shows=Show.query.all()
-    show_dicts = [show.to_dict() for show in shows]    
-    return jsonify(show_dicts)
+    cached_data = redis_client.get('show_shows')
+    if cached_data:
+        return cached_data.decode('utf-8')
+    else:
+        shows = Show.query.all()
+        show_dicts = [show.to_dict() for show in shows]
+        json_data = jsonify(show_dicts).get_data()
+        redis_client.setex('show_shows', 3600, json_data)
+
+        return json_data
+
 
 @app.route('/show_shows/<int:show_id>', methods=['GET', 'POST'])
 def show_show(show_id):
@@ -371,12 +398,26 @@ def create_venue():
         return jsonify({"error": str(e)}), 500
 
 
+# @app.route('/show_venue', methods=['GET', 'POST'])
+# def show_venue():
+#     venues=Venue.query.all()
+#     venue_dict = [venue.to_dict() for venue in venues]
+#     return jsonify(venue_dict)
+
 @app.route('/show_venue', methods=['GET', 'POST'])
 def show_venue():
-    venues=Venue.query.all()
-    venue_dict = [venue.to_dict() for venue in venues]
-    return jsonify(venue_dict)
-    
+    cached_data = redis_client.get('show_venue')
+    if cached_data:
+        return cached_data.decode('utf-8')
+    else:
+        venues = Venue.query.all()
+        venue_dicts = [venue.to_dict() for venue in venues]
+        json_data = jsonify(venue_dicts).get_data()
+        redis_client.setex('show_venue', 3600, json_data)
+
+        return json_data
+
+
 @app.route('/show_venue/<int:venue_id>',methods=['GET','POST'])
 def show_venue1(venue_id):
     venue=Venue.query.get(venue_id)
@@ -531,106 +572,140 @@ def profile():
     except:
         return jsonify({'error': 'An error occurred'})
 
+# @app.route('/bookings', methods=['GET'])
+# def bookings():
+#     try:
+#         tickets = Ticket.query.all()
+#         print(tickets)
+#         ticket_data = [ticket.to_dict() for ticket in (tickets)]
+#         return jsonify({'ticket_data': ticket_data})
+#     except Exception as e:
+#         return jsonify({'error': str(e)})
+
+
 @app.route('/bookings', methods=['GET'])
 def bookings():
     try:
-        tickets = Ticket.query.all()
-        print(tickets)
-        ticket_data = [ticket.to_dict() for ticket in (tickets)]
-        return jsonify({'ticket_data': ticket_data})
+        cached_data = redis_client.get('bookings')
+        if cached_data:
+            return cached_data.decode('utf-8')
+        else:
+            tickets = Ticket.query.all()
+            ticket_data = [ticket.to_dict() for ticket in tickets]
+            json_data = jsonify({'ticket_data': ticket_data}).get_data()
+            redis_client.setex('bookings', 3600, json_data)
+            return json_data
     except Exception as e:
         return jsonify({'error': str(e)})
 
 
+# def render_show_table(shows):
+#     """Renders a list of shows as a HTML table."""
+#     table='<h2>Your monthly bookings</h2>'
+#     table += '<table border="1">'
+#     table += '<tr>'
+#     for field in ['name', 'datetime', 'rating', 'tag']:
+#         table += '<th>{}</th>'.format(field)
+#     table += '</tr>'
+#     for show in shows:
+#         table += '<tr>'
+#         for field in ['name', 'datetime', 'rating', 'tag']:
+#             table += '<td>{}</td>'.format(getattr(show, field))
+#         table += '</tr>'
+#     table += '</table>'
+#     return table
 
+# def send_email(to_email, subject, table):
+#     """Sends an email with the given HTML table as the body."""
+#     from_email = 'gautamgala5544@gmail.com' # email ID
+#     from_password = 'znjdsywcfkqxorrc' # password
 
-def render_show_table(shows):
-    """Renders a list of shows as a HTML table."""
-    table='<h2>Your monthly bookings</h2>'
-    table += '<table border="1">'
-    table += '<tr>'
-    for field in ['name', 'datetime', 'rating', 'tag']:
-        table += '<th>{}</th>'.format(field)
-    table += '</tr>'
-    for show in shows:
-        table += '<tr>'
-        for field in ['name', 'datetime', 'rating', 'tag']:
-            table += '<td>{}</td>'.format(getattr(show, field))
-        table += '</tr>'
-    table += '</table>'
-    return table
+#     msg = MIMEMultipart()
+#     msg['Subject'] = subject
+#     msg['From'] = from_email
+#     msg['To'] = to_email
 
-def send_email(to_email, subject, table):
-    """Sends an email with the given HTML table as the body."""
-    from_email = 'gautamgala5544@gmail.com' # email ID
-    from_password = 'znjdsywcfkqxorrc' # password
+#     part = MIMEText(table, 'html')
+#     msg.attach(part)
 
-    msg = MIMEMultipart()
-    msg['Subject'] = subject
-    msg['From'] = from_email
-    msg['To'] = to_email
+#     smtp = smtplib.SMTP('smtp.gmail.com', 587)
+#     smtp.starttls()
+#     smtp.login(from_email, from_password)
+#     smtp.sendmail(from_email, to_email, msg.as_string())
+#     smtp.quit()
 
-    part = MIMEText(table, 'html')
-    msg.attach(part)
-
-    smtp = smtplib.SMTP('smtp.gmail.com', 587)
-    smtp.starttls()
-    smtp.login(from_email, from_password)
-    smtp.sendmail(from_email, to_email, msg.as_string())
-    smtp.quit()
-
-# @scheduler.task('cron', id='show_stats_monthly', year='*', month='*', day=1)
-# @celery.task
-def show_stats_monthly():
-    # Iterating over all users, get their shows, ratings, render in a html, send as email
-    year = datetime.datetime.now().year
-    month = datetime.datetime.now().month
-    start_date = datetime.datetime(year, month, 1)
-    end_date = start_date.replace(month=start_date.month + 1, day=1) if start_date.month != 12 else start_date.replace(year=start_date.year + 1, month=1, day=1)
-    users = User.query.filter_by().all()
+# # @scheduler.task('cron', id='show_stats_monthly', year='*', month='*', day=1)
+# @celery_app.task
+# def show_stats_monthly():
+#     # Iterating over all users, get their shows, ratings, render in a html, send as email
+#     year = datetime.datetime.now().year
+#     month = datetime.datetime.now().month
+#     start_date = datetime.datetime(year, month, 1)
+#     end_date = start_date.replace(month=start_date.month + 1, day=1) if start_date.month != 12 else start_date.replace(year=start_date.year + 1, month=1, day=1)
+#     users = User.query.filter_by().all()
     
-    for user in users:
-        id = user.id
-        email = user.email
-        tickets = db.session.query(Ticket).filter(
-            Ticket.date_purchased >= start_date.isoformat(),
-            Ticket.date_purchased < end_date.isoformat(),
-            Ticket.user_id == id
-        ).all()
+#     for user in users:
+#         id = user.id
+#         email = user.email
+#         tickets = db.session.query(Ticket).filter(
+#             Ticket.date_purchased >= start_date.isoformat(),
+#             Ticket.date_purchased < end_date.isoformat(),
+#             Ticket.user_id == id
+#         ).all()
         
-        if tickets:  
-            shows = []
-            for ticket in tickets:
-                show = Show.query.filter_by(id=ticket.show_id).first()
-                shows.append(show)
+#         if tickets:  
+#             shows = []
+#             for ticket in tickets:
+#                 show = Show.query.filter_by(id=ticket.show_id).first()
+#                 shows.append(show)
             
-            html = render_show_table(shows)
-            month = datetime.datetime.now().month
-            subject = "Entertainment Report for Month {} of {}".format(month, year)
-            send_email(email, subject, html)
+#             html = render_show_table(shows)
+#             month = datetime.datetime.now().month
+#             subject = "Entertainment Report for Month {} of {}".format(month, year)
+#             print('mpnthly celery done')
+#             send_email(email, subject, html)
 
-# @scheduler.task('cron', id='daily_reminders',hour=18, minute=0)
-# @celery.task
-def daily_reminders():
-    print('inside')
-    today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).date()
-    tomorrow = today + datetime.timedelta(days=1)
-    users = User.query.all()
-    for user in users:
-        id = user.id
-        email = user.email
-        tickets = Ticket.query.filter(
-            Ticket.user_id == id,
-            Ticket.date_purchased >= today,
-            Ticket.date_purchased < tomorrow
-        ).all()
+# # @scheduler.task('cron', id='daily_reminders',hour=18, minute=0)
+# @celery_app.task
+# def daily_reminders():
+#     print('inside')
+#     today = datetime.datetime.now(pytz.timezone('Asia/Kolkata')).date()
+#     tomorrow = today + datetime.timedelta(days=1)
+#     users = User.query.all()
+#     for user in users:
+#         id = user.id
+#         email = user.email
+#         tickets = Ticket.query.filter(
+#             Ticket.user_id == id,
+#             Ticket.date_purchased >= today,
+#             Ticket.date_purchased < tomorrow
+#         ).all()
         
 
-        if not tickets:
-            html = "Hello {},<br>You haven't visited or booked anything today. We hope to see you soon!<br>Best regards,<br>nJOY Services Pvt. Ltd.".format(user.name)
-            print((email,user))
-            subject="Reminder: Visit or Book Something!"
-            send_email(email,subject, html)
+#         if not tickets:
+#             html = "Hello {},<br>You haven't visited or booked anything today. We hope to see you soon!<br>Best regards,<br>nJOY Services Pvt. Ltd.".format(user.name)
+#             print((email,user))
+#             subject="Reminder: Visit or Book Something!"
+#             print('daily celery done')
+#             send_email(email,subject, html)
+
+# @celery_app.task
+# def add():
+#     return "jai"
+
+import tasks
+
+@app.route('/task', methods=['GET', 'POST'])
+def task():
+    adda_result = tasks.add.delay()
+    daily=tasks.daily_reminders.delay()
+    monthly=tasks.show_stats_monthly.delay()
+    from datetime import datetime
+    import pytz
+    oho= (datetime.now(pytz.timezone('Asia/Kolkata')))
+    # print(f"Result Daily: {daily.get()}")
+    # print(f"Result Monthly: {monthly.get()}")
+    return f"Result: {adda_result.id}<br>Result Daily: {daily.id}<br>Result Monthly: {monthly.id}<br>--{oho}--"
 
 if __name__=='__main__':
     db.create_all()
