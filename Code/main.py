@@ -234,28 +234,23 @@ def signup():
 
 @app.route('/search', methods=['GET'])
 def search():
-    name = request.args.get('name')
-    rating = request.args.get('rating')
-    tag = request.args.get('tag')
-    desc = request.args.get('desc')
-    loc = request.args.get('loc')
+    input = request.args.get('input')
     show_results = []
     venue_results = []
     result_type=""
     results=[]
-    if name:
-        show_results = Show.query.filter(Show.name.ilike(f"%{name}%")).all()
-    if rating:
-        show_results = Show.query.filter(Show.rating == rating).all()
-    if tag:
-        show_results = Show.query.filter(Show.tag.ilike(f"%{tag}%")).all()
-    if desc:
-        show_results += Show.query.filter(Show.description.ilike(f"%{desc}%")).all()
+    if input:
+        show_results = Show.query.filter(Show.name.ilike(f"%{input}%")).all()
     
-    if name:
-        venue_results = Venue.query.filter(Venue.name.ilike(f"%{name}%")).all()
-    if loc:
-        venue_results = Venue.query.filter(Venue.location.ilike(f"%{loc}%")).all()
+        show_results += Show.query.filter(Show.rating == input).all()
+    
+        show_results += Show.query.filter(Show.tag.ilike(f"%{input}%")).all()
+    
+        show_results += Show.query.filter(Show.description.ilike(f"%{input}%")).all()
+
+        venue_results = Venue.query.filter(Venue.name.ilike(f"%{input}%")).all()
+
+        venue_results += Venue.query.filter(Venue.location.ilike(f"%{input}%")).all()
     
     if show_results and not venue_results:
         result_type = "Show"
@@ -293,6 +288,7 @@ def create_shows():
                 return jsonify({"error": "Missing required data"}), 400
             
             new_show = Show(name=name, description=description, rating=rating, tag=tag, datetime=datetime, venue_id=venue_id)
+            redis_client.delete('show_shows')
             db.session.add(new_show)
             db.session.commit()
 
@@ -354,6 +350,7 @@ def update_shows(show_id):
             this_show.rating = rating
             this_show.tag = tag
             this_show.datetime = datetime_value
+            redis_client.delete('show_shows')
 
             db.session.commit()
             return jsonify({"message": "Show updated successfully"}), 200
@@ -368,6 +365,7 @@ def delete_shows(show_id):
     try:
         this_show = Show.query.get(show_id)
         if this_show:
+            redis_client.delete('show_shows')
             db.session.delete(this_show)
             db.session.commit()
             return jsonify({"message": "Show deleted successfully"}), 200
@@ -391,6 +389,7 @@ def create_venue():
             return jsonify({"error": "Missing required data"}), 400
 
         new_venue = Venue(name=name, location=location, capacity=capacity)
+        redis_client.delete('show_venue')
         db.session.add(new_venue)
         db.session.commit()
 
@@ -447,7 +446,8 @@ def update_venue(venue_id):
             this_venue.name = name
             this_venue.location = location
             this_venue.capacity = capacity
-            
+            redis_client.delete('show_venue')
+
             db.session.commit()
             return jsonify({"message": "Venue updated successfully"}), 200
         else:
@@ -462,6 +462,7 @@ def delete_venue(venue_id):
     try:
         this_venue = Venue.query.get(venue_id)
         if this_venue:
+            redis_client.delete('show_venue')
             db.session.delete(this_venue)
             db.session.commit()
             return jsonify({"message": "Venue deleted successfully"}), 200
@@ -475,7 +476,7 @@ def delete_venue(venue_id):
 @token_required
 def book_tickets(show_id):   
     try:
-        print('inside')
+        # print('inside')
         show = Show.query.get(show_id)
         if not show:
             return jsonify({'error': 'Invalid show ID'}), 404
@@ -507,7 +508,8 @@ def book_tickets(show_id):
                 ticket = Ticket(show_id=show_id, user_id=user.id)
                 list_tickets.append(ticket)
                 db.session.add(ticket)
-            print('side')
+            # print('side')
+            redis_client.delete('bookings')
             db.session.commit()
             return jsonify({'message': 'Tickets booked successfully'}), 200
         
